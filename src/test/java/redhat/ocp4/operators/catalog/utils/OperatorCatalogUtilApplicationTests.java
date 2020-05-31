@@ -6,8 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
+import org.apache.commons.io.IOUtils;
 import org.assertj.core.util.Arrays;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,6 +52,18 @@ class OperatorCatalogUtilApplicationTests {
 		test = " imageNot: quay.io/path/myimage:v4.0.0 ";
 		assertFalse(GtarUtil.readImageTagFromString(test).isPresent());
 
+	}
+	
+	@Test
+	void testImagesInGtarArchive() {
+		try {
+			String[] images = GtarUtil.imagesInGtarArchive(operatorHubArchive.getInputStream());
+			System.out.println("size: " + images.length);
+			IOUtils.writeLines(Arrays.asList(images).stream().sorted().collect(Collectors.toList()), System.lineSeparator(), new FileWriter("/home/lshulman/dev/operator-catalog-tools/src/test/resources/results"));
+			assertTrue(images.length > 0);
+		} catch (IOException e) {
+			fail(e.getMessage());
+		}
 	}
 	
 	
