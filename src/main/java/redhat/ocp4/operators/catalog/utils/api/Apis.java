@@ -18,15 +18,7 @@ import redhat.ocp4.operators.catalog.utils.GtarUtil;
 @RestController
 public class Apis {
 
-	@GetMapping("/hello")
-	public String hello(@RequestParam(value = "name", defaultValue = "World") String name) {
-		return String.format("Hello %s!", name);
-	}
-	
-	@PostMapping("/listArchiveEntries")
-	public String[] listArchiveEntries(@RequestParam("file") MultipartFile file) throws IOException {
-		return GtarUtil.listEntriesInGtarArchive(file.getInputStream());
-	}
+
 	
 	@PostMapping("/listAllImages")
 	public String[] listAllImages(@RequestParam("file") MultipartFile file) throws IOException {
