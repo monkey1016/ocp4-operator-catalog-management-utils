@@ -139,15 +139,19 @@ public class GtarUtil {
 						result = result.substring(0, result.indexOf("@"));
 					}
 					return result;
-				}).distinct().collect(Collectors.toList());
-		String yamlTemplate = IOUtils
-				.toString(ClassLoader.getSystemResourceAsStream("classpath:imageContentSourcePolicy.yaml.template"));
-		StringBuffer buf = new StringBuffer(yamlTemplate);
+				}).distinct().sorted().collect(Collectors.toList());
+		
+		ImageContentSourcePolicyYaml yaml = new ImageContentSourcePolicyYaml();
+		yaml.getMetadata().put("name", name);
+		List<ImageContentSourcePolicyYaml.Mirror> mirrors = new ArrayList<ImageContentSourcePolicyYaml.Mirror>();
+		
 		imagesWithoutVersionOrHash.forEach(image -> {
-			buf.append(image + System.lineSeparator());
-			buf.append((image.contains("/") ? mirror + image.substring(image.indexOf("/")) : mirror + "/" + image)
-					+ System.lineSeparator());
+			ImageContentSourcePolicyYaml.Mirror mirrorYaml = new ImageContentSourcePolicyYaml.Mirror();
+			mirrorYaml.setSource(image);
+			mirrorYaml.setMirrors(new String[] {mirror + image.substring(image.indexOf("/"))});
+			mirrors.add(mirrorYaml);
 		});
-		return null;
+		yaml.getSpec().setRepositoryDigestMirrors(mirrors.toArray(new ImageContentSourcePolicyYaml.Mirror[] {} ));
+		return new Yaml().dump(yaml);
 	}
 }

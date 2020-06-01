@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.Resource;
+import org.yaml.snakeyaml.Yaml;
 
 @SpringBootTest
 class OperatorCatalogUtilApplicationTests {
@@ -26,7 +27,10 @@ class OperatorCatalogUtilApplicationTests {
 	Resource operatorHubArchive;
 	
 	@Value("classpath:operatorhub-mapping-5-31-20.txt")
-	Resource operatorMappingFile;
+	Resource operatorHubMappingFile;
+	
+	@Value("classpath:operatorHubImageContentSourcePoicy.yaml")
+	Resource operatorHubICSPYaml;
 	
 	@Test
 	void testListEntriesInGtarArchive() {
@@ -63,13 +67,13 @@ class OperatorCatalogUtilApplicationTests {
 		try {
 			String mappings = GtarUtil.createMirrorMappings(operatorHubArchive.getInputStream(), "test.io");
 			StringBuffer buf = new StringBuffer();
-			IOUtils.readLines(operatorMappingFile.getInputStream()).stream().distinct().sorted().forEach(s -> buf.append(s).append(System.lineSeparator()));
+			IOUtils.readLines(operatorHubMappingFile.getInputStream()).stream().distinct().sorted().forEach(s -> buf.append(s).append(System.lineSeparator()));
 			assertEquals(buf.toString(), mappings);
 		} catch (IOException e) {
 			fail(e.getMessage());
 		}
 	}
 	
-	
+
 
 }
