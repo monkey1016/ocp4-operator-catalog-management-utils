@@ -35,10 +35,11 @@ public class Apis {
 	
 	@PostMapping("/mirrorImages")
 	public String mirrorImages(@RequestParam("file") MultipartFile file,  @RequestParam("mirror") String mirror ) throws IOException {
-		String[] images = GtarUtil.imagesInGtarArchive(file.getInputStream());
-		List<String> mappings = Arrays.asList(images).stream().map(s ->s + "=" + mirror + s.substring(s.indexOf("/"))).collect(Collectors.toList());
-		StringBuffer strBuf = new StringBuffer();
-		mappings.stream().sorted().forEach(mapping -> strBuf.append(mapping + System.lineSeparator()));
-		return strBuf.toString();
+		return GtarUtil.createMirrorMappings(file.getInputStream(), mirror);
+	}
+	
+	@PostMapping("/imageContentSourcePolicy")
+	public String imageContentSourcePolicy(@RequestParam("file") MultipartFile file,  @RequestParam("mirror") String mirror, @RequestParam("name") String name) throws IOException {
+		return GtarUtil.createImageContentSourcePolicy(file.getInputStream(), mirror, name);
 	}
 }

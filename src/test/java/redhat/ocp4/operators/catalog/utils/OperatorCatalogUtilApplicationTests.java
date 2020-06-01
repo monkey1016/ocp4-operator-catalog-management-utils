@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -21,15 +22,18 @@ import org.springframework.core.io.Resource;
 @SpringBootTest
 class OperatorCatalogUtilApplicationTests {
 
-	@Value("classpath:operatorhub-5-30-20.tar.gz")
+	@Value("classpath:operatorhub-manifests-5-31-20.tar.gz")
 	Resource operatorHubArchive;
+	
+	@Value("classpath:operatorhub-mapping-5-31-20.txt")
+	Resource operatorMappingFile;
 	
 	@Test
 	void testListEntriesInGtarArchive() {
 		assertTrue(operatorHubArchive.exists());
 		try {
 			String[] archiveEntries = GtarUtil.listEntriesInGtarArchive(operatorHubArchive.getInputStream());
-			assertEquals(2948, archiveEntries.length);
+			assertEquals(2958, archiveEntries.length);
 		} catch (IOException e) {
 			fail(e.getMessage());
 		}
@@ -57,10 +61,10 @@ class OperatorCatalogUtilApplicationTests {
 	@Test
 	void testImagesInGtarArchive() {
 		try {
-			String[] images = GtarUtil.imagesInGtarArchive(operatorHubArchive.getInputStream());
-			System.out.println("size: " + images.length);
-			IOUtils.writeLines(Arrays.asList(images).stream().sorted().collect(Collectors.toList()), System.lineSeparator(), new FileWriter("/home/lshulman/dev/operator-catalog-tools/src/test/resources/results"));
-			assertTrue(images.length > 0);
+			String mappings = GtarUtil.createMirrorMappings(operatorHubArchive.getInputStream(), "test.io");
+			StringBuffer buf = new StringBuffer();
+			IOUtils.readLines(operatorMappingFile.getInputStream()).stream().distinct().sorted().forEach(s -> buf.append(s).append(System.lineSeparator()));
+			assertEquals(buf.toString(), mappings);
 		} catch (IOException e) {
 			fail(e.getMessage());
 		}

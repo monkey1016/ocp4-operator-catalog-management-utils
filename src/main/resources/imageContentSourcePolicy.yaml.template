@@ -1,0 +1,6 @@
+apiVersion: operator.openshift.io/v1alpha1
+kind: ImageContentSourcePolicy
+metadata:
+  name: IMAGE_CONTENT_SOURCE_POLICY_NAME
+spec:
+  repositoryDigestMirrors:

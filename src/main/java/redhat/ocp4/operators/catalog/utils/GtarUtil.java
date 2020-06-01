@@ -5,11 +5,13 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -31,7 +33,7 @@ public class GtarUtil {
 			}
 			fin.close();
 		}
-		return results.toArray(new String[] {});
+		return results.stream().distinct().sorted().collect(Collectors.toList()).toArray(new String[] {});
 	}
 
 	public static Optional<String> readImageTagFromString(String line) {
@@ -91,6 +93,9 @@ public class GtarUtil {
 							image = "docker.io/" + image;
 						}
 					}
+					if (image.startsWith("index.docker.io")) {
+						image = image.replaceAll("index.docker.io", "docker.io");
+					}
 					set.add(image);
 				}
 			}
@@ -107,5 +112,42 @@ public class GtarUtil {
 			}
 		});
 		return set;
+	}
+
+	public static String createMirrorMappings(InputStream inputStream, String mirror) throws IOException {
+		String[] images = GtarUtil.imagesInGtarArchive(inputStream);
+		List<String> mappings = Arrays.asList(images).stream().map(s -> {
+			String mirrorImage = s.substring(s.indexOf("/"));
+			mirrorImage = mirrorImage.contains("@sha256") ? mirrorImage.substring(0, mirrorImage.indexOf("@sha256"))
+					: mirrorImage;
+			return s + "=" + mirror + mirrorImage;
+		}).collect(Collectors.toList());
+		StringBuffer strBuf = new StringBuffer();
+		mappings.stream().distinct().sorted().forEach(mapping -> strBuf.append(mapping + System.lineSeparator()));
+		return strBuf.toString();
+	}
+
+	public static String createImageContentSourcePolicy(InputStream inputStream, String mirror, String name)
+			throws IOException {
+		List<String> imagesWithoutVersionOrHash = Arrays.asList(GtarUtil.imagesInGtarArchive(inputStream)).stream()
+				.map(s -> {
+					String result = s;
+					if (result.contains(":")) {
+						result = result.substring(0, result.indexOf(":"));
+					}
+					if (result.contains("@")) {
+						result = result.substring(0, result.indexOf("@"));
+					}
+					return result;
+				}).distinct().collect(Collectors.toList());
+		String yamlTemplate = IOUtils
+				.toString(ClassLoader.getSystemResourceAsStream("classpath:imageContentSourcePolicy.yaml.template"));
+		StringBuffer buf = new StringBuffer(yamlTemplate);
+		imagesWithoutVersionOrHash.forEach(image -> {
+			buf.append(image + System.lineSeparator());
+			buf.append((image.contains("/") ? mirror + image.substring(image.indexOf("/")) : mirror + "/" + image)
+					+ System.lineSeparator());
+		});
+		return null;
 	}
 }
