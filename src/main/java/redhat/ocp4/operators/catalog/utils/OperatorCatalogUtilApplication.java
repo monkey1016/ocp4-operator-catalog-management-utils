@@ -8,6 +8,7 @@ import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
+import springfox.documentation.service.ApiInfo;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
@@ -31,11 +32,12 @@ public class OperatorCatalogUtilApplication {
 	
     @Bean
     public Docket api() { 
+    	ApiInfo apiInfo = new ApiInfo("Operator Catalog Utils API", "methods to facilitate mirroring for Operator Catalog Updates", "methods to facilitate mirroring for Operator Catalog Updates", null, null, null, null, null);
         return new Docket(DocumentationType.SWAGGER_2)  
           .select()                                  
           .apis(RequestHandlerSelectors.any())              
           .paths(PathSelectors.any())                          
-          .build();                                           
+          .build().apiInfo(apiInfo);                                           
     }
 
 }
