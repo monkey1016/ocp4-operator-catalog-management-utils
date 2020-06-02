@@ -32,12 +32,11 @@ public class OperatorCatalogUtilApplication {
 	
     @Bean
     public Docket api() { 
-    	ApiInfo apiInfo = new ApiInfo("Operator Catalog Utils API", "methods to facilitate mirroring for Operator Catalog Updates", "methods to facilitate mirroring for Operator Catalog Updates", null, null, null, null, null);
         return new Docket(DocumentationType.SWAGGER_2)  
           .select()                                  
           .apis(RequestHandlerSelectors.any())              
-          .paths(PathSelectors.any())                          
-          .build().apiInfo(apiInfo);                                           
+          .paths(PathSelectors.any())                  
+          .build();                                           
     }
 
 }

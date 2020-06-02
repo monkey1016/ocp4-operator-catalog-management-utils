@@ -1,13 +1,7 @@
 package redhat.ocp4.operators.catalog.utils.api;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
-import org.apache.commons.io.IOUtils;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,6 +11,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import redhat.ocp4.operators.catalog.utils.GtarUtil;
 
+@Api(value = "Operator Catalog Management Apis")
 @RestController
 public class OperatorCatalogUtilApis {
 
