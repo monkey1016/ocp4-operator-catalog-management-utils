@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -13,9 +15,13 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import javax.servlet.ServletOutputStream;
+
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.io.IOUtils;
 import org.yaml.snakeyaml.Yaml;
 
@@ -77,6 +83,8 @@ public class GtarUtil {
 
 		return set.toArray(new String[] {});
 	}
+	
+	
 
 	@SuppressWarnings("unchecked")
 	private static Set<String> imagesFromYamlMap(Map yamlData) {
@@ -153,5 +161,35 @@ public class GtarUtil {
 		});
 		yaml.getSpec().setRepositoryDigestMirrors(mirrors.toArray(new ImageContentSourcePolicyYaml.Mirror[] {} ));
 		return new Yaml().dump(yaml);
+	}
+
+	public static void copyTarGzFile(InputStream inputStream, OutputStream outputStream) throws IOException {
+		TarArchiveOutputStream output = new TarArchiveOutputStream(new GzipCompressorOutputStream(outputStream));
+		output.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
+		output.setAddPaxHeadersForNonAsciiNames(true);
+		try (TarArchiveInputStream fin = new TarArchiveInputStream(new GzipCompressorInputStream(inputStream))) {
+			TarArchiveEntry entry;
+			while ((entry = fin.getNextTarEntry()) != null) {
+
+				if (entry.isFile() && (entry.getName().endsWith(".yaml") || entry.getName().endsWith(".yml"))) {
+					Yaml yaml = new Yaml();
+					Map<String, Object> data = yaml.load(fin);
+					byte[] yamlString = yaml.dump(data).getBytes();
+					entry.setSize(yamlString.length);
+					output.putArchiveEntry(entry);
+					IOUtils.write(yamlString, output);
+					output.closeArchiveEntry();
+				}else {
+					output.putArchiveEntry(entry);
+					IOUtils.copy(fin, output);
+					output.closeArchiveEntry();
+				}
+				
+			}
+			fin.close();
+		}
+		output.finish();
+		output.close();
+
 	}
 }

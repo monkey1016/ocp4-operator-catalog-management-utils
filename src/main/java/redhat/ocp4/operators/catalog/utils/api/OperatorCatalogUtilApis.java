@@ -2,6 +2,8 @@ package redhat.ocp4.operators.catalog.utils.api;
 
 import java.io.IOException;
 
+import javax.servlet.http.HttpServletResponse;
+
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,5 +34,12 @@ public class OperatorCatalogUtilApis {
 	@PostMapping("/createImageContentSourcePolicy")
 	public String imageContentSourcePolicy(@RequestParam("file") MultipartFile file,  @RequestParam("mirrorUrl") String mirror, @RequestParam("name") String name) throws IOException {
 		return GtarUtil.createImageContentSourcePolicy(file.getInputStream(), mirror, name);
+	}
+	
+	//@ResponseBody
+	@PostMapping("copyTarGzFile")
+	public void copyTarGzFile(@RequestParam("file") MultipartFile file, HttpServletResponse response) throws IOException {
+		GtarUtil.copyTarGzFile(file.getInputStream(), response.getOutputStream());
+		response.flushBuffer();
 	}
 }
