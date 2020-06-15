@@ -2,6 +2,7 @@ package redhat.ocp4.operators.catalog.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -12,9 +13,11 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
@@ -68,12 +71,20 @@ class OperatorCatalogUtilApplicationTests {
 	}
 	
 	@Test
-	void testImagesInGtarArchive() {
+	void testOcImageMirrorInput() {
 		try {
 			String mappings = GtarUtil.createMirrorMappings(operatorHubArchive.getInputStream(), "test.io");
 			StringBuffer buf = new StringBuffer();
 			IOUtils.readLines(operatorHubMappingFile.getInputStream()).stream().distinct().sorted().forEach(s -> buf.append(s).append(System.lineSeparator()));
-			assertEquals(buf.toString(), mappings);
+			//the output of the api method should not equal what "oc adm catalog mirror" produces, because "oc adm catalog mirror"
+			//actually misses some images that need to be mirrors. We test here to ensure that the api at least
+			//includes all of the images that "oc adm catalog mirror" produces
+			assertNotEquals(buf.toString(), mappings);
+			TreeSet<String> ocAdmCatalogMirrorLines = new TreeSet<String>(IOUtils.readLines(new StringReader(buf.toString())));
+			TreeSet<String> apiMirrorLines = new TreeSet<String>(IOUtils.readLines(new StringReader(mappings)));
+			assertTrue(apiMirrorLines.size() > ocAdmCatalogMirrorLines.size());
+			//ensure that the api result contains everything that "oc adm catalog mirror" produces
+			assertTrue(apiMirrorLines.containsAll(ocAdmCatalogMirrorLines));
 		} catch (IOException e) {
 			fail(e.getMessage());
 		}
