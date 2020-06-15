@@ -6,10 +6,15 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
@@ -72,6 +77,15 @@ class OperatorCatalogUtilApplicationTests {
 		} catch (IOException e) {
 			fail(e.getMessage());
 		}
+	}
+	
+	@Test
+	void yamlTest() throws IOException {
+		Yaml yaml = new Yaml();
+		Object obj = yaml.load(new FileInputStream(new File("/home/lshulman/dev/ocp-operator-catalog-pipeline/tmp/manifests/couchbase-enterprise-certified/couchbase-enterprise-certified-qj3qfmee/2.0.0/couchbase-v2.0.0.clusterserviceversion.yaml")));
+		assertTrue(obj instanceof Map);
+		String out = GtarUtil.applyImageMirrors(new HashMap<String,String>(), IOUtils.toString(new FileInputStream(new File("/home/lshulman/dev/ocp-operator-catalog-pipeline/tmp/manifests/couchbase-enterprise-certified/couchbase-enterprise-certified-qj3qfmee/2.0.0/couchbase-v2.0.0.clusterserviceversion.yaml"))));
+		IOUtils.write(out, new FileWriter(new File("/home/lshulman/dev/ocp-operator-catalog-pipeline/tmp/manifests/couchbase-enterprise-certified/couchbase-enterprise-certified-qj3qfmee/2.0.0/couchbase-v2.0.0.clusterserviceversiontest.yaml")));
 	}
 	
 
