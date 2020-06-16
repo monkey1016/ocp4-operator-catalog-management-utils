@@ -1,9 +1,10 @@
-FROM openjdk:8-jdk-alpine
+ARG JAVA_BASE_IMAGE=openjdk:8-jdk-alpine
+LABEL maintainer="Lev Shulman <lshulman@redhat.com>"
+
+FROM ${JAVA_BASE_IMAGE}
 RUN mkdir /app
-COPY mvnw /app/mvnw
-COPY .mvn /app/.mvn
-COPY pom.xml /app/pom.xml
-COPY src /app/src
+
+COPY operator-utils-api-service /app/ 
 EXPOSE 8080
 WORKDIR /app/
 CMD ./mvnw spring-boot:run
