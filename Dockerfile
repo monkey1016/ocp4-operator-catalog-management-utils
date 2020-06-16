@@ -1,4 +1,5 @@
 ARG JAVA_BASE_IMAGE=openjdk:8-jdk-alpine
+LABEL maintainer="Lev Shulman <lshulman@redhat.com>"
 
 FROM ${JAVA_BASE_IMAGE}
 RUN mkdir /app
