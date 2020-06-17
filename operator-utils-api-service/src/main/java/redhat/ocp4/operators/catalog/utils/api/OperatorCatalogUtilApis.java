@@ -32,13 +32,13 @@ import redhat.ocp4.operators.catalog.utils.GtarUtil;
 @RestController
 public class OperatorCatalogUtilApis {
 
-	@ApiOperation(value = "lists all of the images referenced in a tar.gz catalog manifests file")
+	@ApiOperation(value = "produces a unique list of all of the images referenced in a tar.gz catalog manifests file")
 	@PostMapping("/listAllImagesInCatalogManifests")
 	public String[] listAllImages(@RequestParam("file") MultipartFile file) throws IOException {
 		return GtarUtil.imagesInGtarArchive(file.getInputStream());
 	}
 
-	@ApiOperation(value = "returns a mapping.txt file from a tar.gz catalog  manifests file. The result is exactly as produced by a 'oc adm catalog mirror' command. See https://docs.openshift.com/container-platform/4.3/operators/olm-restricted-networks.html#olm-restricted-networks-operatorhub_olm-restricted-networks")
+	@ApiOperation(value = "returns a mapping.txt file from a tar.gz catalog  manifests file. The result is like that produced by a 'oc adm catalog mirror' command. See https://docs.openshift.com/container-platform/4.3/operators/olm-restricted-networks.html#olm-restricted-networks-operatorhub_olm-restricted-networks")
 	@PostMapping("/mirrorImagesInCatalogManifests")
 	public String mirrorImages(@RequestParam("file") MultipartFile file, @RequestParam("mirrorUrl") String mirror)
 			throws IOException {
@@ -52,6 +52,7 @@ public class OperatorCatalogUtilApis {
 		return GtarUtil.createImageContentSourcePolicy(file.getInputStream(), mirror, name);
 	}
 
+	@ApiOperation(value = "takes a tar.gz package manifest archive, and a map of registry mirrors to apply, and produces the same tar.gz archive, but with the mirror applied to every image reference ")
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@RequestMapping(value = "/applyImageMirrors", method = RequestMethod.POST)
 	public void applyImageMirrors(@RequestParam("package-manifest-file") MultipartFile file, 
@@ -64,6 +65,7 @@ public class OperatorCatalogUtilApis {
 		response.flushBuffer();
 	}
 	
+	@ApiOperation(value = "produces a unique list of registry hostnames from all of the images in the tar.gz archive. Useful if you need to figure out which registries  you might need credentials for to apply mirrors")
 	@PostMapping("/listRegistriesInCatalogManifests")
 	public List<String> listRegistriesInCatalogManifests(@RequestParam("file") MultipartFile file) throws IOException{
 		return GtarUtil.registriesinGtarArchive(file.getInputStream());
