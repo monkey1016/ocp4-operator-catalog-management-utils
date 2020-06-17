@@ -1,11 +1,7 @@
 package redhat.ocp4.operators.catalog.utils;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -16,19 +12,21 @@ import java.util.TreeSet;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import javax.servlet.ServletOutputStream;
-
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.io.IOUtils;
 import org.yaml.snakeyaml.Yaml;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * Static methods that perform the needed processing on tar.gz archive files
+ * @author lshulman
+ *
+ */
 public class GtarUtil {
 
 	public static String[] listEntriesInGtarArchive(InputStream in) throws IOException {
@@ -76,10 +74,7 @@ public class GtarUtil {
 					Yaml yaml = new Yaml();
 					Map<String, Object> data = yaml.load(fin);
 					set.addAll(imagesFromYamlMap(data));
-//					List<String> lines = IOUtils.readLines(fin);
-//					lines.forEach(l -> {
-//						GtarUtil.readImageTagFromString(l).ifPresent(image -> set.add(image.replaceAll("\"", "").replaceAll("'", "")));
-//					});
+
 				}
 			}
 			fin.close();
