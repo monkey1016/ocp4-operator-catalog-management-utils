@@ -73,15 +73,7 @@ class OperatorCatalogUtilApplicationTests {
 		}
 	}
 	
-	@Test
-	void yamlTest() throws IOException {
-		Yaml yaml = new Yaml();
-		Object obj = yaml.load(new FileInputStream(new File("/home/lshulman/dev/ocp-operator-catalog-pipeline/tmp/manifests/couchbase-enterprise-certified/couchbase-enterprise-certified-qj3qfmee/2.0.0/couchbase-v2.0.0.clusterserviceversion.yaml")));
-		assertTrue(obj instanceof Map);
-		String out = GtarUtil.applyImageMirrors(new HashMap<String,String>(), IOUtils.toString(new FileInputStream(new File("/home/lshulman/dev/ocp-operator-catalog-pipeline/tmp/manifests/couchbase-enterprise-certified/couchbase-enterprise-certified-qj3qfmee/2.0.0/couchbase-v2.0.0.clusterserviceversion.yaml"))));
-		IOUtils.write(out, new FileWriter(new File("/home/lshulman/dev/ocp-operator-catalog-pipeline/tmp/manifests/couchbase-enterprise-certified/couchbase-enterprise-certified-qj3qfmee/2.0.0/couchbase-v2.0.0.clusterserviceversiontest.yaml")));
-	}
-	
+
 
 
 }
