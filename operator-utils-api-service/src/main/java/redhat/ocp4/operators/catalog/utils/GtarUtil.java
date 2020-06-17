@@ -18,6 +18,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.IOUtils;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.scanner.ScannerException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -183,9 +184,9 @@ public class GtarUtil {
 	 * @return
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static String applyImageMirrors(Map<String, String> mirrors, String input) {
+	public static String applyImageMirrors(Map<String, String> mirrors, String input){
 		Yaml yaml = new Yaml();
-		Object yamlObj = yaml.load(input);
+		Object yamlObj = yaml.load(input.replaceAll("\t", "  "));
 
 		if (yamlObj instanceof Map) {
 			applyMirrorSubstitutionsToYamlMap((Map) yamlObj, mirrors);
@@ -273,9 +274,9 @@ public class GtarUtil {
 					&& k instanceof String) {
 				try {
 					yamlData.put(j, convertYamlToJson(applyImageMirrors(mirrors, (String) k)));
-				} catch (JsonProcessingException e) {
+				} catch (JsonProcessingException | ScannerException e) {
 					Logger.getLogger(GtarUtil.class.getName()).warning(
-							"could not convert alm-examples Yaml to Json. did not apply mirros to alm-examples");
+							"could not convert alm-examples Yaml to Json. did not apply mirrors to alm-examples. Error: " + e.getMessage());
 				}
 			}
 			
