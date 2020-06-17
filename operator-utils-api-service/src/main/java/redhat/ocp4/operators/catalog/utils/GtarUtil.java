@@ -176,6 +176,12 @@ public class GtarUtil {
 	}
 
 
+	/**
+	 * 
+	 * @param mirrors
+	 * @param input
+	 * @return
+	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static String applyImageMirrors(Map<String, String> mirrors, String input) {
 		Yaml yaml = new Yaml();
