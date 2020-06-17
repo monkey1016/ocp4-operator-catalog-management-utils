@@ -51,24 +51,7 @@ class OperatorCatalogUtilApplicationTests {
 		}
 	}
 	
-	@Test
-	void testReadImageTagFromString() {
-		String test = " image: quay.io/path/myimage:v4.0.0  ";
-		assertEquals("quay.io/path/myimage:v4.0.0", GtarUtil.readImageTagFromString(test).get());
-		
-		test = " ### ";
-		assertFalse(GtarUtil.readImageTagFromString(test).isPresent());
-		
-		test = " # image: quay.io/path/myimage:v4.0.0  ";
-		assertFalse(GtarUtil.readImageTagFromString(test).isPresent());
-		
-		test = " dockerImage: quay.io/path/myimage:v4.0.0  ";
-		assertEquals("quay.io/path/myimage:v4.0.0", GtarUtil.readImageTagFromString(test).get());
 
-		test = " imageNot: quay.io/path/myimage:v4.0.0 ";
-		assertFalse(GtarUtil.readImageTagFromString(test).isPresent());
-
-	}
 	
 	@Test
 	void testOcImageMirrorInput() {

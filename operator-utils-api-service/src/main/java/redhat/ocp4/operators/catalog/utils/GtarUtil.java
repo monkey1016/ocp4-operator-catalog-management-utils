@@ -23,12 +23,18 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Static methods that perform the needed processing on tar.gz archive files
+ * Static methods that perform the needed API processing on tar.gz archive files
  * @author lshulman
  *
  */
 public class GtarUtil {
 
+	/**
+	 * List all files/directories the argument tar/gz input stream
+	 * @param in a tar/gz input stream
+	 * @return
+	 * @throws IOException
+	 */
 	public static String[] listEntriesInGtarArchive(InputStream in) throws IOException {
 		List<String> results = new ArrayList<String>();
 		try (TarArchiveInputStream fin = new TarArchiveInputStream(new GzipCompressorInputStream(in))) {
@@ -44,23 +50,13 @@ public class GtarUtil {
 		return results.stream().distinct().sorted().collect(Collectors.toList()).toArray(new String[] {});
 	}
 
-	public static Optional<String> readImageTagFromString(String line) {
-		if (line == null) {
-			return Optional.empty();
-		}
-		String trimmed = line.trim();
-		if (trimmed.startsWith("#") || !trimmed.contains("mage:")
-				|| (trimmed.contains("mage:") && trimmed.indexOf("mage:") > trimmed.indexOf(":"))) {
-			return Optional.empty();
-		}
-		String image = trimmed.substring(trimmed.indexOf("mage:") + 5).trim();
-		String[] tokens = image.split("/");
-		if (tokens.length > 1 && !tokens[0].contains(".")) {
-			image = "docker.io/" + image;
-		}
-		return image.isEmpty() ? Optional.empty() : Optional.of(image.trim());
-	}
 
+	/**
+	 * return a unique list of container images in the argument package manifest tar/gz input stream
+	 * @param in
+	 * @return
+	 * @throws IOException
+	 */
 	public static String[] imagesInGtarArchive(InputStream in) throws IOException {
 		TreeSet<String> set = new TreeSet<String>();
 
@@ -121,6 +117,14 @@ public class GtarUtil {
 		return set;
 	}
 
+	/**
+	 * produces output like that produced by a 'oc adm catalog mirror' command on the package manifest tar/gz archive.  See https://docs.openshift.com/container-platform/4.3/operators/olm-restricted-networks.html#olm-restricted-networks-operatorhub_olm-restricted-networks"
+	 * 
+	 * @param inputStream a tar/gz package manifest archive
+	 * @param mirror the mirror registry to apply to all image references in the Yaml
+	 * @return
+	 * @throws IOException
+	 */
 	public static String createMirrorMappings(InputStream inputStream, String mirror) throws IOException {
 		String[] images = GtarUtil.imagesInGtarArchive(inputStream);
 		List<String> mappings = Arrays.asList(images).stream().map(s -> {
@@ -134,6 +138,15 @@ public class GtarUtil {
 		return strBuf.toString();
 	}
 
+	/**
+	 * creates an ImageContentSourcePolicy resource in Yaml from a tar.gz catalog manifests file. The result is exactly as produced by a 'oc adm catalog mirror' command. See https://docs.openshift.com/container-platform/4.3/operators/olm-restricted-networks.html#olm-restricted-networks-operatorhub_olm-restricted-networks"
+	 * 
+	 * @param inputStream the package manifest tar/gz file
+	 * @param mirror the mirror registry to apply to all image references in the Yaml
+	 * @param name will be set as the name of the ImageContentSourcePolicy resource
+	 * @return
+	 * @throws IOException
+	 */
 	public static String createImageContentSourcePolicy(InputStream inputStream, String mirror, String name)
 			throws IOException {
 		List<String> imagesWithoutVersionOrHash = Arrays.asList(GtarUtil.imagesInGtarArchive(inputStream)).stream()
@@ -161,6 +174,7 @@ public class GtarUtil {
 		yaml.getSpec().setRepositoryDigestMirrors(mirrors.toArray(new ImageContentSourcePolicyYaml.Mirror[] {}));
 		return new Yaml().dump(yaml);
 	}
+
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static String applyImageMirrors(Map<String, String> mirrors, String input) {
