@@ -5,7 +5,7 @@ This project contains an API service which provides some useful endpoints for ma
 To build/launch the api service with Podman or Docker:
 
 ```
-podman built -t <image> .
+podman build -t <image> .
 podman run --rm -it -p 8080:8080 <image>
 ```
 
