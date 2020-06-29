@@ -3,11 +3,17 @@ pipeline {
     node {
       label 'any' 
     }
-  }    
+  }   
+
+    parameters {
+        string(name: 'CATALOG_NAME',  description: 'the name of the catalog. the created tar.gz will be named $CATALOG_NAME.tar.gz')
+
+    }
+ 
    stages {
         stage('Build') {
             steps {
-                sh './create-catalog.sh mycatalog'
+                sh './create-catalog.sh ${params.CATALOG_NAME}'
             }
         }
     }
