@@ -9,9 +9,9 @@ tar zxf oc.tar.gz
 __usage="Usage:
 #set variable \$CATALOG_NAME
 #the script will create a file named \$CATALOG_NAME.tar.gz
+#Example: this will create a file named mycatalog.tar.gz, containing package manifests for the operatorhub catalog
 export CATALOG_NAME=mycatalog
-Example: ./create-catalog.sh
-this will create a file named mycatalog.tar.gz, containing package manifests for the operatorhub catalog
+./create-catalog.sh
 
 Optionally, you can also set a \$POST_CATALOG_CREATION_SCRIPT variable with its content being a series of commands to run after the tar.gz is created
 This can be useful if you want the script to push the catalog tar.gz file to a repository like Artifactory.
