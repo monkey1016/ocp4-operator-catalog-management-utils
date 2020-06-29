@@ -13,7 +13,7 @@ pipeline {
    stages {
         stage('Build') {
             steps {
-                sh "./create-catalog.sh ${params.CATALOG_NAME}"
+                sh "cd operatorhub-catalog; ./create-catalog.sh ${params.CATALOG_NAME}"
             }
         }
     }
