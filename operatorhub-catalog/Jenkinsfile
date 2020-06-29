@@ -1,13 +1,13 @@
 pipeline {
   agent {
     node {
-      label 'nodejs' 
+      label 'any' 
     }
   }    
    stages {
         stage('Build') {
             steps {
-                sh 'echo "Hello World"'
+                sh './create-catalog.sh mycatalog'
             }
         }
     }
