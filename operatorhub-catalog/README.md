@@ -48,5 +48,9 @@ sudo podman run --rm -it -p 8080:8080  -e FILENAME=mycatalog.tar.gz -e POST_CATA
 ```
 The Jenkins server will have a pre-defined job named "operator-catalog", which you can run to create the catalog tar.gz file
 
-
+Run it in Openshift vi an Openshift Template:
+```
+oc process -f jenkins/openshift/jenkins-template.yml -p POST_CATALOG_CREATION_SCRIPT='curl -T mycatalog.tar.gz "http://myrepo.com/mycatalog.tar.gz"' \
+  -p IMAGE=<image name:tag> | oc create -f -
+```
 
