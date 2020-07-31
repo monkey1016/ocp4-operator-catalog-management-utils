@@ -42,5 +42,5 @@ if [ -z "$FILE_SIZE" ] || [ ! -f "$CATALOG_NAME.tar.gz" ]; then
 fi
 echo cleaning up..
 rm -rf manifests 2> /dev/null
-rm oc 2> /dev/null
+rm oc > /dev/null 2> /dev/null
 echo done
