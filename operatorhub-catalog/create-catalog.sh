@@ -4,7 +4,7 @@
 rm -rf manifests
 
 #unpack the oc tool
-tar zxf oc.tar.gz
+oc version 2> /dev/null || tar zxf oc.tar.gz && PATH=$(pwd):$PATH
 
 __usage="Usage:
 #set variable \$CATALOG_NAME
@@ -30,7 +30,7 @@ fi
 for APP_REG in redhat-operators certified-operators community-operators
 do
   echo "fetching $APP_REG package manifests.."
-  ./oc adm catalog build --manifest-dir=manifests --appregistry-org=${APP_REG}
+  oc adm catalog build --manifest-dir=manifests --appregistry-org=${APP_REG}
 done
 echo "creating $CATALOG_NAME.tar.gz file"
 tar zcf ${CATALOG_NAME}.tar.gz manifests
@@ -41,6 +41,6 @@ if [ -z "$FILE_SIZE" ] || [ ! -f "$CATALOG_NAME.tar.gz" ]; then
   exit 1
 fi
 echo cleaning up..
-rm -rf manifests
-rm oc
+rm -rf manifests 2> /dev/null
+rm oc 2> /dev/null
 echo done
