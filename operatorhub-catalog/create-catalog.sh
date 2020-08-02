@@ -1,7 +1,7 @@
 #!/bin/bash
 #set -x
 
-rm -rf manifests
+rm -rf manifests 2> /dev/null
 
 #unpack the oc tool
 oc version 2> /dev/null || tar zxf oc.tar.gz && PATH=$(pwd):$PATH
