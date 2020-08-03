@@ -1,0 +1,104 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: jenkins
+  annotations:
+    description: "A template to instantiate Jenkins for running the Operator Catalog Creation Job"
+    tags: "jenkins,operators,catalog"
+labels:
+  app: jenkins
+parameters:
+- description: ""
+  name: NAME
+  required: true
+  value: "jenkins"
+- description: "Random 4 char string to append to NAME"
+  name: RANDOM
+  generate: expression
+  from: "[a-zA-Z0-9]{5}"
+- description: "The image name:tag"
+  name: "IMAGE"
+  required: true
+- description: "filename for the catalog tar.gz file the job will create"
+  name: "FILENAME"
+  required: true
+- description: "script to invoke after file is created. can be used to push to some repo"
+  name: "POST_CATALOG_CREATION_SCRIPT"
+  required: true
+objects:
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: ${NAME}
+  spec:
+    ports:
+    - name: http
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      app: ${NAME}
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: ${NAME}
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: ${NAME}
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        labels:
+          app: ${NAME}
+        name: ${NAME}
+      spec:
+        volumes:
+          - name: jenkins-volume-1
+            emptyDir: {}
+        containers:
+        - env:
+          - name: HTTP_PROXY
+          - name: HTTPS_PROXY
+          - name: NO_PROXY
+          - name: FILENAME
+            value: ${FILENAME}
+          - name: POST_CATALOG_CREATION_SCRIPT
+            value: ${POST_CATALOG_CREATION_SCRIPT}
+          image: ${IMAGE}
+          imagePullPolicy: Always
+          name: ${NAME}
+          ports:
+          - containerPort: 8080
+            name: http
+            protocol: TCP
+          resources:
+            requests:
+#              cpu: 100m
+              memory: 2Gi
+          volumeMounts:
+            - name: jenkins-volume-1
+              mountPath: /var/jenkins_home
+        restartPolicy: Always
+        terminationGracePeriodSeconds: 30
+- apiVersion: route.openshift.io/v1
+  kind: Route
+  metadata:
+    name: ${NAME}
+  spec:
+    port:
+      targetPort: http
+    to:
+      kind: Service
+      name: ${NAME}
+      weight: 100
+    wildcardPolicy: None

@@ -31,3 +31,29 @@ export POST_CATALOG_CREATION_SCRIPT='curl -T mycatalog.tar.gz "http://myrepo.com
 $CATALOG_NAME is not set. Exiting.
 ```
 
+## Run script as a Jenkins Job via a Jenkins Container
+
+This project also contains code to build a Jenkins Image that will have a Jenkins Job that executes the script to build the catalog. 
+This Jenkins Job can be useful to run periodically, so that there is a background job that builds the latest catalog, and pushes it to 
+some repo, like Artifactory. With this in place, you can have a self updating Operator Catalog
+
+To build the image:
+```
+sudo podman build -f jenkins.Dockerfile -t <image name:tag> .
+```
+
+Run the jenkins container with podman:
+```
+sudo podman run --rm -it -p 8080:8080  -e FILENAME=mycatalog.tar.gz \
+  -e POST_CATALOG_CREATION_SCRIPT='curl -T mycatalog.tar.gz "http://myrepo.com/mycatalog.tar.gz"' \
+  <image name:tag>
+```
+The Jenkins server will have a pre-defined job named "operator-catalog", which you can run to create the catalog tar.gz file
+
+Run it in Openshift vi an Openshift Template:
+```
+oc process -f jenkins/openshift/jenkins-template.yml \
+  -p POST_CATALOG_CREATION_SCRIPT='curl -T mycatalog.tar.gz "http://myrepo.com/mycatalog.tar.gz"' \
+  -p IMAGE=<image name:tag> | oc create -f -
+```
+A Route will be created that you can access Jenkins UI from
