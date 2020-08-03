@@ -30,7 +30,7 @@ fi
 for APP_REG in redhat-operators certified-operators community-operators
 do
   echo "fetching $APP_REG package manifests.."
-  ./oc adm catalog build --manifest-dir=manifests --appregistry-org=${APP_REG}
+  ./oc adm catalog build --manifest-dir=manifests --appregistry-org=${APP_REG} --from=quay.io/openshift-release-dev/ocp-release:4.5.0
 done
 echo "creating $CATALOG_NAME.tar.gz file"
 tar zcf ${CATALOG_NAME}.tar.gz manifests
