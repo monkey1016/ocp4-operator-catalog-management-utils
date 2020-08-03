@@ -17,9 +17,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
@@ -28,7 +30,6 @@ import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.io.IOUtils;
-import org.assertj.core.util.Arrays;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -48,6 +49,37 @@ class OperatorCatalogUtilApplicationTests {
 
 	@Value("classpath:operatorHubImageContentSourcePoicy.yaml")
 	Resource operatorHubICSPYaml;
+
+	@Test
+	void testPruneCatalog() {
+		TarArchiveInputStream tis;
+		try {
+			tis = new TarArchiveInputStream(new GzipCompressorInputStream(operatorHubArchive.getInputStream()));
+
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			TarArchiveOutputStream tos = new TarArchiveOutputStream(new GzipCompressorOutputStream(bos));
+			tos.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
+			tos.setAddPaxHeadersForNonAsciiNames(true);
+
+			Set<String> imageRepos = new TreeSet<String>(
+					Arrays.asList("coreos/prometheus-operator", "couchbase/operator", "opstree/redis-operator"));
+			List<String> allImages = Arrays.asList(GtarUtil.imagesInGtarArchive(operatorHubArchive.getInputStream()));
+			//we assert that there are images from repos other than the three we're testing this above
+			//after we prune the catalog, we'll run this test on our pruned catalog, and should get 0
+			assertTrue(allImages.stream().filter(s -> !imageRepos.stream().anyMatch(repo -> s.contains(repo))).collect(Collectors.toList()).size() > 0);
+			
+			GtarUtil.pruneCatalog(imageRepos, tis, tos);
+			
+			List<String> imagesFromPrunedCatalog = Arrays.asList(GtarUtil.imagesInGtarArchive(new ByteArrayInputStream(bos.toByteArray())));
+			
+			assertEquals(imagesFromPrunedCatalog.stream().filter(s -> !imageRepos.stream().anyMatch(repo -> s.contains(repo))).collect(Collectors.toList()).size(), 0);
+		} catch (IOException e) {
+			e.printStackTrace();
+
+			fail(e.getMessage());
+		}
+
+	}
 
 	@Test
 	void testListEntriesInGtarArchive() {
@@ -88,25 +120,30 @@ class OperatorCatalogUtilApplicationTests {
 	@Test
 	void testApplyImageMirrors() {
 		try {
-			//get list of image registries in our input tar.gz. 
+			// get list of image registries in our input tar.gz.
 			List<String> imageRegistries = GtarUtil.registriesinGtarArchive(operatorHubArchive.getInputStream());
 			assertEquals(new TreeSet<Object>(imageRegistries),
 					new TreeSet<Object>(Arrays.asList(new String[] { "docker.io", "gcr.io", "k8s.gcr.io",
 							"lightbend-docker-registry.bintray.io", "quay.io", "registry.access.redhat.com",
 							"registry.connect.redhat.com", "registry.redhat.io", "registry.svc.ci.openshift.org" })));
-			//we'll create a simple mirror map, which just prepends "mirror." for each registry, so that "docker.io" -> "mirror.docker.io"
-			Map<String,String> mirrors = imageRegistries.stream().collect(Collectors.toMap(s -> s, s -> "mirror." + s));
-			
+			// we'll create a simple mirror map, which just prepends "mirror." for each
+			// registry, so that "docker.io" -> "mirror.docker.io"
+			Map<String, String> mirrors = imageRegistries.stream()
+					.collect(Collectors.toMap(s -> s, s -> "mirror." + s));
+
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			GtarUtil.applyImageMirrors(mirrors,
 					new TarArchiveInputStream(new GzipCompressorInputStream(operatorHubArchive.getInputStream())),
 					new TarArchiveOutputStream(new GzipCompressorOutputStream(baos)));
 			baos.flush();
 			baos.close();
-			//get list of registries from the result tar.gz. We expect them all to start with "mirror."
-			List<String> mirroredRegistries = GtarUtil.registriesinGtarArchive(new ByteArrayInputStream(baos.toByteArray()));
+			// get list of registries from the result tar.gz. We expect them all to start
+			// with "mirror."
+			List<String> mirroredRegistries = GtarUtil
+					.registriesinGtarArchive(new ByteArrayInputStream(baos.toByteArray()));
 			assertEquals(imageRegistries.size(), mirroredRegistries.size());
-			assertEquals(mirroredRegistries, imageRegistries.stream().map(s -> "mirror." + s).collect(Collectors.toList()));
+			assertEquals(mirroredRegistries,
+					imageRegistries.stream().map(s -> "mirror." + s).collect(Collectors.toList()));
 		} catch (IOException e) {
 			fail(e.getMessage());
 		}
