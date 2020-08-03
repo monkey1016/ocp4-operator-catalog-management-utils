@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -21,6 +23,8 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.micrometer.core.instrument.util.IOUtils;
@@ -54,12 +58,29 @@ public class OperatorCatalogUtilApis {
 
 	@ApiOperation(value = "takes a tar.gz package manifest archive, and a map of registry mirrors to apply, and produces the same tar.gz archive, but with the mirror applied to every image reference ")
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	@RequestMapping(value = "/applyImageMirrors", method = RequestMethod.POST)
+	@PostMapping("/applyImageMirrors")
 	public void applyImageMirrors(@RequestParam("package-manifest-file") MultipartFile file, 
 			@RequestParam("json-mirrors-file") MultipartFile mirrorsFile,
 			HttpServletResponse response) throws IOException {
 		Map mirrors = new ObjectMapper().readValue(mirrorsFile.getInputStream(), Map.class);
 		GtarUtil.applyImageMirrors(mirrors,
+				new TarArchiveInputStream(new GzipCompressorInputStream(file.getInputStream())),
+				new TarArchiveOutputStream(new GzipCompressorOutputStream(response.getOutputStream())));
+		response.flushBuffer();
+	}
+	
+	@ApiOperation(value = "takes a tar.gz package manifest archive, and simple Json Array of Operator image repos (Ex: '[\n" + 
+			"  \"coreos/prometheus-operator\",\n" + 
+			"  \"couchbase/operator\",\n" + 
+			"  \"opstree/redis-operator\"\n" + 
+			"]'\n" + 
+			", and returns a tar.gz package manifest archive by pruning the original to only contain Operators with images from those repos")
+	@SuppressWarnings("unchecked")
+	@PostMapping("/pruneCatalog")
+	public void pruneCatalog(@RequestParam("package-manifest-file") MultipartFile file,
+			@RequestParam("repositories-file") MultipartFile reposListFile, HttpServletResponse response) throws JsonParseException, JsonMappingException, IOException {
+		Set<String> reposList = new TreeSet<String>(new ObjectMapper().readValue(reposListFile.getInputStream(), List.class));
+		GtarUtil.pruneCatalog(reposList,
 				new TarArchiveInputStream(new GzipCompressorInputStream(file.getInputStream())),
 				new TarArchiveOutputStream(new GzipCompressorOutputStream(response.getOutputStream())));
 		response.flushBuffer();
