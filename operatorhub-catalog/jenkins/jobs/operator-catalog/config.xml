@@ -36,12 +36,12 @@
     stages {
         stage(&apos;Build Catalog tar.gz&apos;) {
             steps {
-                sh &quot;export CATALOG_NAME=${env.FILENAME}; create-catalog.sh;&quot;     
+                sh &quot;export CATALOG_NAME=${env.CATALOG_NAME}; create-catalog.sh;&quot;     
             }
         }
         stage(&apos;Post build action&apos;){
             steps {
-                sh &quot;export  POST_CATALOG_CREATION_SCRIPT=&apos;${env.POST_CATALOG_CREATION_SCRIPT}&apos;; eval \&quot;\$POST_CATALOG_CREATION_SCRIPT\&quot;&quot;     
+               sh &quot;${env.POST_CATALOG_CREATION_SCRIPT}&quot; 
 
             }
         }
