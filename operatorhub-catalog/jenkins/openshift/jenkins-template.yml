@@ -25,6 +25,12 @@ parameters:
 - description: "script to invoke after file is created. can be used to push to some repo"
   name: "POST_CATALOG_CREATION_SCRIPT"
   required: true
+- description: "HTTP PROXY"
+  name: "HTTP_PROXY"
+  required: false
+- description: "HTTPS PROXY"
+  name: "HTTPS_PROXY"
+  required: false
 objects:
 - apiVersion: v1
   kind: Service
@@ -62,14 +68,15 @@ objects:
           app: ${NAME}
         name: ${NAME}
       spec:
-        volumes:
-          - name: jenkins-volume-1
-            emptyDir: {}
+#        volumes:
+#          - name: jenkins-volume-1
+#            emptyDir: {}
         containers:
         - env:
-          - name: HTTP_PROXY
-          - name: HTTPS_PROXY
-          - name: NO_PROXY
+          - name: http_proxy
+            value: ${HTTP_PROXY}
+          - name: https_proxy
+            value: ${HTTPS_PROXY} 
           - name: FILENAME
             value: ${FILENAME}
           - name: POST_CATALOG_CREATION_SCRIPT
@@ -85,9 +92,9 @@ objects:
             requests:
 #              cpu: 100m
               memory: 2Gi
-          volumeMounts:
-            - name: jenkins-volume-1
-              mountPath: /var/jenkins_home
+#          volumeMounts:
+#            - name: jenkins-volume-1
+#              mountPath: /var/jenkins_home
         restartPolicy: Always
         terminationGracePeriodSeconds: 30
 - apiVersion: route.openshift.io/v1
