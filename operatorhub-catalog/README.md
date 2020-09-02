@@ -54,6 +54,7 @@ Run it in Openshift vi an Openshift Template:
 ```
 oc process -f jenkins/openshift/jenkins-template.yml \
   -p POST_CATALOG_CREATION_SCRIPT='curl -T mycatalog.tar.gz "http://myrepo.com/mycatalog.tar.gz"' \
+  -p FILENAME=mycatalog.tar.gz \
   -p IMAGE=<image name:tag> | oc create -f -
 ```
 A Route will be created that you can access Jenkins UI from
