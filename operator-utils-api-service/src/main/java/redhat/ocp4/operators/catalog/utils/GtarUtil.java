@@ -239,6 +239,15 @@ public class GtarUtil {
 				if (imagesWithoutRegistryHost.size() > 0) {
 
 					imagesWithoutRegistryHost = imagesWithoutRegistryHost.stream().map(s -> s.substring(s.indexOf("/")).substring(1))
+							.map(s -> {
+								if(s.contains("/") ) {
+									String potentialRepoKey = s.split("/")[0];
+									if(potentialRepoKey.startsWith("operator-") && potentialRepoKey.endsWith("-remote")) { //is our repoKey
+										return s.substring(potentialRepoKey.length() + 1);
+									}
+								}
+								return s;
+							})
 							.collect(Collectors.toSet());
 					for (String repo : reposListFile) {
 						if (imagesWithoutRegistryHost.stream().anyMatch(s -> s.startsWith(repo))) {
