@@ -1,30 +1,22 @@
 package redhat.ocp4.operators.catalog.utils;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.IOUtils;
-import org.springframework.web.multipart.MultipartFile;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.scanner.ScannerException;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Static methods that perform the needed API processing on tar.gz archive files
@@ -86,8 +78,13 @@ public class GtarUtil {
 		return set.toArray(new String[] {});
 	}
 
+	/**
+	 * Returns a list of the images found in the provided YAML. Searches for various forms of image information.
+	 * @param yamlData a Map representing the YAML data provided by the clusterserviceversion file
+	 * @return a Set of image URIs
+	 */
 	@SuppressWarnings("unchecked")
-	private static Set<String> imagesFromYamlMap(Map yamlData) {
+	public static Set<String> imagesFromYamlMap(Map yamlData) {
 		TreeSet<String> set = new TreeSet<String>();
 		yamlData.forEach((j, k) -> {
 			if (j instanceof String && Arrays.asList("image", "containerImage", "baseImage").stream()

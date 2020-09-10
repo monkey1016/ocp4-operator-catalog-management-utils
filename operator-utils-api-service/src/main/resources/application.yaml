@@ -1,0 +1,4 @@
+operator-catalog:
+  archive:
+    url: http://localhost:8090/operatorhub-manifests-5-31-20.tar.gz
+  cache-refresh-ms: 300000

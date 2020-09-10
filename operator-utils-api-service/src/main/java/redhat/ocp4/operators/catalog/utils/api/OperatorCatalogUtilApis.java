@@ -8,19 +8,14 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.websocket.server.PathParam;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -31,10 +26,13 @@ import io.micrometer.core.instrument.util.IOUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import redhat.ocp4.operators.catalog.utils.GtarUtil;
+import redhat.ocp4.operators.catalog.utils.cache.OperatorCatalogCache;
 
 @Api(value = "Operator Catalog Management Apis")
 @RestController
 public class OperatorCatalogUtilApis {
+	@Autowired
+	private OperatorCatalogCache operatorCatalogCache;
 
 	@ApiOperation(value = "produces a unique list of all of the images referenced in a tar.gz catalog manifests file")
 	@PostMapping("/listAllImagesInCatalogManifests")
@@ -90,5 +88,11 @@ public class OperatorCatalogUtilApis {
 	@PostMapping("/listRegistriesInCatalogManifests")
 	public List<String> listRegistriesInCatalogManifests(@RequestParam("file") MultipartFile file) throws IOException{
 		return GtarUtil.registriesinGtarArchive(file.getInputStream());
+	}
+
+	@ApiOperation(value = "returns a list of operators that an image belongs to.")
+	@GetMapping("/images/operators")
+	public List<String> listOperatorsForImage(@RequestParam("name") String imageName) {
+		return operatorCatalogCache.getOperatorsForImage(imageName);
 	}
 }
