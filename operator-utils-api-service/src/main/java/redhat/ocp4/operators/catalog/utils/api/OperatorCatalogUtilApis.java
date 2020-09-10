@@ -20,10 +20,7 @@ import redhat.ocp4.operators.catalog.utils.cache.OperatorCatalogCache;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 @Api(value = "Operator Catalog Management Apis")
 @RestController
@@ -89,7 +86,7 @@ public class OperatorCatalogUtilApis {
 
 	@ApiOperation(value = "returns a list of operators that an image belongs to.")
 	@GetMapping("/images/operators")
-	public List<String> listOperatorsForImage(@RequestParam("name") String imageName) {
-		return operatorCatalogCache.getOperatorsForImage(imageName);
+	public Map<String, List<Map<String,String>>> listOperatorsForImage(@RequestParam("name") List<String> imageName) {
+		return operatorCatalogCache.getOperatorsForImages(imageName);
 	}
 }

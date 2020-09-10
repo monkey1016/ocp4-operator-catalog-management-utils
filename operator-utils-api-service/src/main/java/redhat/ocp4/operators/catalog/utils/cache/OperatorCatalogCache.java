@@ -46,7 +46,7 @@ public class OperatorCatalogCache {
             InputStream in = new URL(archiveDownloadUrl).openStream();
             List<OperatorDetails> operatorDetailsList = extractOperatorsFromCatalog(in);
             IMap<String,OperatorDetails> operatorCache = hazelcastInstance.getMap(OPERATOR_CACHE);
-            IMap<String, List<String>> imagesToOperatorsCache =
+            IMap<String, List<Map<String,String>>> imagesToOperatorsCache =
                     hazelcastInstance.getMap(IMAGE_OPERATORS_CACHE);
             logger.debug("Clearing existing caches...");
             operatorCache.clear();
@@ -57,11 +57,11 @@ public class OperatorCatalogCache {
                 operatorCache.put(name, operator);
                 for(String imageName : operator.getImages()) {
                     if(imagesToOperatorsCache.get(imageName) == null) {
-                        List<String> operatorsList = new ArrayList<>();
-                        operatorsList.add(operator.getMetadata().getName());
+                        List<Map<String,String>> operatorsList = new ArrayList<>();
+                        operatorsList.add(getNameAndVersionMap(operator.getMetadata().getName()));
                         imagesToOperatorsCache.put(imageName, operatorsList);
                     } else {
-                        imagesToOperatorsCache.get(imageName).add(operator.getMetadata().getName());
+                        imagesToOperatorsCache.get(imageName).add(getNameAndVersionMap(operator.getMetadata().getName()));
                     }
                 }
             }
@@ -74,12 +74,20 @@ public class OperatorCatalogCache {
         }
     }
 
-    public List<String> getOperatorsForImage(String imageName) {
-        IMap<String, List<String>> imagesToOperatorsCache = hazelcastInstance.getMap(IMAGE_OPERATORS_CACHE);
+    public List<Map<String,String>> getOperatorsForImage(String imageName) {
+        IMap<String, List<Map<String,String>>> imagesToOperatorsCache = hazelcastInstance.getMap(IMAGE_OPERATORS_CACHE);
         return imagesToOperatorsCache.get(imageName);
     }
 
-    public Map<String, List<String>> getAllImagesToOperatorMappings() {
+    public Map<String, List<Map<String,String>>> getOperatorsForImages(List<String> imageNames) {
+        HashMap<String, List<Map<String,String>>> imagesToOperatorsMap = new HashMap<>();
+        for(String imageName : imageNames) {
+            imagesToOperatorsMap.put(imageName, getOperatorsForImage(imageName));
+        }
+        return imagesToOperatorsMap;
+    }
+
+    public Map<String, List<Map<String,String>>> getAllImagesToOperatorMappings() {
         return hazelcastInstance.getMap(IMAGE_OPERATORS_CACHE);
     }
 
@@ -113,5 +121,13 @@ public class OperatorCatalogCache {
         return entry.isFile() &&
                 (entry.getName().endsWith(".yaml") || entry.getName().endsWith(".yml")) &&
                 entry.getName().contains(".clusterserviceversion.");
+    }
+
+    private Map<String, String> getNameAndVersionMap(String nameAndVersion) {
+        String[] operatorNameVersion = nameAndVersion.split("\\.", 2);
+        HashMap<String, String> nameAndVersionMap = new HashMap<>();
+        nameAndVersionMap.put("name", operatorNameVersion[0]);
+        nameAndVersionMap.put("version", operatorNameVersion[1]);
+        return nameAndVersionMap;
     }
 }
