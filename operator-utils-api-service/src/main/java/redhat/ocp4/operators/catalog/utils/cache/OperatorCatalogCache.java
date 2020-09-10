@@ -20,6 +20,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class OperatorCatalogCache {
@@ -33,7 +34,6 @@ public class OperatorCatalogCache {
 
     @Value("${operator-catalog.archive.url}")
     private String archiveDownloadUrl;
-
 
     /**
      * After creation of the bean, and every five minutes, refresh the Operator Catalog cache.
@@ -77,6 +77,10 @@ public class OperatorCatalogCache {
     public List<String> getOperatorsForImage(String imageName) {
         IMap<String, List<String>> imagesToOperatorsCache = hazelcastInstance.getMap(IMAGE_OPERATORS_CACHE);
         return imagesToOperatorsCache.get(imageName);
+    }
+
+    public Map<String, List<String>> getAllImagesToOperatorMappings() {
+        return hazelcastInstance.getMap(IMAGE_OPERATORS_CACHE);
     }
 
     /**
