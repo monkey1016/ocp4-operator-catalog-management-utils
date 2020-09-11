@@ -70,6 +70,12 @@ public class GtarUtil {
 		return imageOperatorInfo(in).keySet().toArray(new String[] {});
 	}
 	
+	/**
+	 * For an input opertor catalog tar.gz file, returns a map of all images to their OperatorDetails, image->List of OperatorDetails
+	 * @param in
+	 * @return
+	 * @throws IOException
+	 */
 	public static Map<String,List<OperatorDetails>> imageOperatorInfo(InputStream in) throws IOException {
 		HashMap<String,List<OperatorDetails>> results = new HashMap<String,List<OperatorDetails>>();
 		try (TarArchiveInputStream fin = new TarArchiveInputStream(new GzipCompressorInputStream(in))) {
@@ -97,7 +103,12 @@ public class GtarUtil {
 	}
 	
 	
-	
+	/**
+	 * Extracts the Operator Name and Version from an Archive Entry yaml file, and populates the OperatorDetails DTO to return
+	 * If Operator Name or Version cannot be extracted, the value will be 'N/A'
+	 * @param entry
+	 * @return
+	 */
 	public static OperatorDetails extractOperatorDetailsFromEntry(ArchiveEntry entry) {
 		String filename = entry.getName();
 		String[] dirs = filename.split("/");
@@ -124,6 +135,13 @@ public class GtarUtil {
 		return OperatorDetails.builder().operatorName(operatorName).version(version).build();
 	}
 
+	/**
+	 * For a given Image URL, searches the given Operator Catalog tar.gz input stream, and returns the image's list of OperatorDetails
+	 * @param imageName
+	 * @param inputStream
+	 * @return
+	 * @throws IOException
+	 */
 	public static List<OperatorDetails> operatorInfoFromImage(String imageName, InputStream inputStream) throws IOException {
 		Map<String,List<OperatorDetails>> imageOperatorInfo = GtarUtil.imageOperatorInfo(inputStream);
 		return imageOperatorInfo.get(imageName);
