@@ -116,7 +116,7 @@ public class OperatorCatalogUtilApis {
 	
 	
 	@SuppressWarnings("resource")
-	@ApiOperation(value = "returns a list of operators that an image belongs to.")
+	@ApiOperation(value = "returns a list of operators that an image belongs to, by referencing an internal Operator Catalog tar.gz file. Will return a 500 if no internal Operator Catalog tar.gz file has been configured or mounted to this service")
 	@GetMapping("/images/operators")
 	public List<String> listOperatorsForImage(@RequestParam("name") String imageName) throws IOException {
 		File operatorHubFile = new File(operatorHubFilePath);
