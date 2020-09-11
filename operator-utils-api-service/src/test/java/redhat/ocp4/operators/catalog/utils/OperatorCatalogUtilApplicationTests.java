@@ -110,6 +110,7 @@ class OperatorCatalogUtilApplicationTests {
 			fail(e.getMessage());
 		}
 
+		//make sure at least the size of imagesInGtarArchive() is the same as our method's
 		try {
 			assertEquals(new TreeSet<String>(Arrays.asList(GtarUtil.imagesInGtarArchive(operatorHubArchive.getInputStream()))), new TreeSet<String>(details.keySet()));
 		} catch (IOException e) {
@@ -123,6 +124,44 @@ class OperatorCatalogUtilApplicationTests {
 				.anyMatch(dets -> dets.getOperatorName() == null || dets.getOperatorName().equals("N/A")
 						|| dets.getVersion() == null || dets.getVersion().equals("N/A")));
 	}
+	
+	@Test
+	void testOperatorInfoForImage() {
+
+		// portworx is a rare case where the operatorname in the file is not the same as
+		// the operator id
+		String image = "registry.connect.redhat.com/portworx/openstorage-operator:1.0.4";
+		try {
+			assertEquals(
+					Arrays.asList(new OperatorDetails[] {
+							OperatorDetails.builder().operatorName("portworx-certified").version("v1.0.4").build() }),
+					GtarUtil.operatorInfoFromImage(image, operatorHubArchive.getInputStream()));
+		} catch (IOException e) {
+			fail(e.getMessage());
+		}
+
+		// example of image that appears in two different versions of the operator
+		image = "quay.io/screeley44/aws-s3-provisioner:v1.0.0";
+		try {
+			assertEquals(
+					Arrays.asList(new OperatorDetails[] {
+							OperatorDetails.builder().operatorName("awss3-operator-registry").version("1.0.0").build(),
+							OperatorDetails.builder().operatorName("awss3-operator-registry").version("1.0.1")
+									.build() }),
+					GtarUtil.operatorInfoFromImage(image, operatorHubArchive.getInputStream()));
+		} catch (IOException e) {
+			fail(e.getMessage());
+		}
+
+		//image is not in catalog, so should return null
+		image = "junk";
+		try {
+			assertNull(GtarUtil.operatorInfoFromImage(image, operatorHubArchive.getInputStream()));
+		} catch (IOException e) {
+			fail(e.getMessage());
+		}
+	}
+
 	@Test
 	void testPruneCatalog() {
 		TarArchiveInputStream tis;
