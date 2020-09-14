@@ -123,6 +123,14 @@ class OperatorCatalogUtilApplicationTests {
 		assertFalse(details.values().stream().flatMap(List::stream)
 				.anyMatch(dets -> dets.getOperatorName() == null || dets.getOperatorName().equals("N/A")
 						|| dets.getVersion() == null || dets.getVersion().equals("N/A")));
+		
+
+		//we know that some images belong to multiple versions of the same operator, or even to different operators alltogether
+		//lets double check that our code found them properly
+		List<String> oauth2Proxy = details.get("quay.io/pusher/oauth2_proxy:latest").stream().map(o -> o.getOperatorName()).distinct().collect(Collectors.toList());
+		assertTrue(oauth2Proxy.containsAll(Arrays.asList("amq-online", "enmasse")));
+		List<String> logging = details.get("registry.redhat.io/openshift4/ose-logging-elasticsearch5@sha256:e4cca1134b7213c8877ac6522fcad172e0f47eea799020eed25b90dc928af28e").stream().map(o -> o.getOperatorName()).distinct().collect(Collectors.toList());
+		assertTrue(logging.containsAll(Arrays.asList("cluster-logging", "elasticsearch-operator")));
 	}
 	
 	@Test
