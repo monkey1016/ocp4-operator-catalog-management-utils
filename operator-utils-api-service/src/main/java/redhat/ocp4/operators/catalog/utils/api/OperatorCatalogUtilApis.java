@@ -35,8 +35,6 @@ import java.util.stream.Collectors;
 @RestController
 public class OperatorCatalogUtilApis {
 
-	@Value("${operatorhub.tar.gz.file:/opt/operatorhub.tar.gz}")
-	private String operatorHubFilePath;
 	@Autowired
 	private OperatorCatalogCache operatorCatalogCache;
 
@@ -108,24 +106,14 @@ public class OperatorCatalogUtilApis {
 		return GtarUtil.operatorInfoFromImage(imageName, file.getInputStream()).stream().map(details -> details.getOperatorName()).collect(Collectors.toList());
 	}
 
-
-	@SuppressWarnings("resource")
-	@ApiOperation(value = "returns a list of operators that an image belongs to, by referencing an internal Operator Catalog tar.gz file. Will return a 500 if no internal Operator Catalog tar.gz file has been configured or mounted to this service")
+	@ApiOperation(value = "returns a list of operators that an image belongs to.")
 	@GetMapping("/images/operators")
-	public List<String> listOperatorsForImage(@RequestParam("name") String imageName) throws IOException {
-		File operatorHubFile = new File(operatorHubFilePath);
-		if (operatorHubFile.exists()) {
-			return GtarUtil.operatorInfoFromImage(imageName, new FileInputStream(operatorHubFile)).stream().map(details -> details.getOperatorName()).collect(Collectors.toList());
-		}else {
-			String errMsg = "operatorhub tar.gz file does not exist at configured path " + operatorHubFilePath + " to serve GET '/images/operators/' request! ";
-			Logger.getLogger(this.getClass().getName()).severe(errMsg);
-			throw new RuntimeException(errMsg);
-		}
+	public Map<String, List<Map<String,String>>> listOperatorsForImage(
+			@RequestParam("name") List<String> imageName,
+			@RequestParam("force-refresh") boolean forceRefresh
+	) {
+		if(forceRefresh)
+			operatorCatalogCache.populateCache();
+		return operatorCatalogCache.getOperatorsForImages(imageName);
 	}
-
-//	@ApiOperation(value = "returns a list of operators that an image belongs to.")
-//	@GetMapping("/images/operators")
-//	public Map<String, List<Map<String,String>>> listOperatorsForImage(@RequestParam("name") List<String> imageName) {
-//		return operatorCatalogCache.getOperatorsForImages(imageName);
-//	}
 }

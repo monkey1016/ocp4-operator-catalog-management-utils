@@ -12,7 +12,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.yaml.snakeyaml.Yaml;
+import redhat.ocp4.operators.catalog.utils.GtarUtil;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -21,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class OperatorCatalogCache {
@@ -35,15 +39,28 @@ public class OperatorCatalogCache {
     @Value("${operator-catalog.archive.url}")
     private String archiveDownloadUrl;
 
+    @Value("${operatorhub.tar.gz.file:/opt/operatorhub.tar.gz}")
+    private String operatorHubFilePath;
+
+
     /**
-     * After creation of the bean, and every five minutes, refresh the Operator Catalog cache.
+     * After creation of the bean, and every five minutes, refresh the Operator Catalog cache. If the file exists
+     * locally, use that file as the source of truth, otherwise download it from Artifactory using the provided URL.
      */
     @Scheduled(fixedRateString = "${operator-catalog.cache-refresh-ms}")
-//    @PostConstruct
     public void populateCache() {
         logger.info("Populating operator caches...");
         try {
-            InputStream in = new URL(archiveDownloadUrl).openStream();
+            File operatorHubFile = new File(operatorHubFilePath);
+            InputStream in;
+            if (operatorHubFile.exists()) {
+                logger.debug("Found " + operatorHubFilePath + ", using for local cache.");
+                in = new FileInputStream(operatorHubFile);
+            } else {
+                logger.debug("Did not find " + operatorHubFilePath + ". Attempting download from " + archiveDownloadUrl);
+                in = new URL(archiveDownloadUrl).openStream();
+            }
+
             List<OperatorDetails> operatorDetailsList = extractOperatorsFromCatalog(in);
             IMap<String,OperatorDetails> operatorCache = hazelcastInstance.getMap(OPERATOR_CACHE);
             IMap<String, List<Map<String,String>>> imagesToOperatorsCache =
@@ -89,6 +106,22 @@ public class OperatorCatalogCache {
 
     public Map<String, List<Map<String,String>>> getAllImagesToOperatorMappings() {
         return hazelcastInstance.getMap(IMAGE_OPERATORS_CACHE);
+    }
+
+    public String getOperatorHubFilePath() {
+        return operatorHubFilePath;
+    }
+
+    public void setOperatorHubFilePath(String operatorHubFilePath) {
+        this.operatorHubFilePath = operatorHubFilePath;
+    }
+
+    public String getArchiveDownloadUrl() {
+        return archiveDownloadUrl;
+    }
+
+    public void setArchiveDownloadUrl(String archiveDownloadUrl) {
+        this.archiveDownloadUrl = archiveDownloadUrl;
     }
 
     /**
