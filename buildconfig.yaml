@@ -1,0 +1,16 @@
+
+kind: BuildConfig
+apiVersion: build.openshift.io/v1
+metadata:
+  name: operator-utils-api-service
+spec:
+  source:
+    git:
+      uri: https://github.com/ldojo/ocp4-operator-catalog-management-utils.git
+      ref: add-images-mapping-api
+  strategy:
+    dockerStrategy: {}
+  output:
+    to:
+      kind: ImageStreamTag
+      name: operator-utils-api-service:latest
