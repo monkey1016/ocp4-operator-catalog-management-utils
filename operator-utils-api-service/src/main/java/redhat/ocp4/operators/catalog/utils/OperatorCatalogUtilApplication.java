@@ -26,7 +26,7 @@ public class OperatorCatalogUtilApplication {
 	public MultipartResolver multipartResolver() {
 	    CommonsMultipartResolver multipartResolver
 	      = new CommonsMultipartResolver();
-	    multipartResolver.setMaxUploadSize(20000000);
+	    multipartResolver.setMaxUploadSize(80000000);
 	    return multipartResolver;
 	}
 	

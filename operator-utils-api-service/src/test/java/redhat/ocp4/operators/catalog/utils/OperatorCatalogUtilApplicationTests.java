@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
@@ -35,9 +37,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.Resource;
 import org.yaml.snakeyaml.Yaml;
+import org.apache.commons.compress.archivers.ArchiveEntry;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import redhat.ocp4.operators.catalog.utils.dto.OperatorDetails;
+
+import org.mockito.Mock;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 @SpringBootTest
 class OperatorCatalogUtilApplicationTests {
 
@@ -49,6 +57,118 @@ class OperatorCatalogUtilApplicationTests {
 
 	@Value("classpath:operatorHubImageContentSourcePoicy.yaml")
 	Resource operatorHubICSPYaml;
+
+	
+	
+	@Test
+	void testExtractOperatorDetailsFromArchiveEntryPath() {
+		//some happy path tests to extract operator name and version from file paths that are legit
+		ArchiveEntry entry = mock(ArchiveEntry.class);
+		when(entry.getName()).thenReturn("manifests/manifests-123XXX/operator-name/operator-dir-xxx/v1.0.0/op-name.v1.0.0.clusterserviceversion.yml");
+		
+		OperatorDetails details = GtarUtil.extractOperatorDetailsFromEntry(entry);
+		assertEquals(details, OperatorDetails.builder().operatorName("operator-name").version("v1.0.0").build());
+		
+		//there are cases where there is no intermediate operator-dir-xxx directory before the version
+		when(entry.getName()).thenReturn("manifests/manifests-123XXX/operator-name/v1.0.0/op-name.v1.0.0.clusterserviceversion.yml");
+		details = GtarUtil.extractOperatorDetailsFromEntry(entry);
+		assertEquals(details, OperatorDetails.builder().operatorName("operator-name").version("v1.0.0").build());
+
+		//and there are cases where there is no directory specifically for the version. Overall
+		//the version should be extracted from the filename itself, not the dir name
+		when(entry.getName()).thenReturn("manifests/manifests-123XXX/operator-name/operator-dir-xxx/op-name.v1.0.0.clusterserviceversion.yml");
+		details = GtarUtil.extractOperatorDetailsFromEntry(entry);
+		assertEquals(details, OperatorDetails.builder().operatorName("operator-name").version("v1.0.0").build());
+
+		//edge cases:
+		
+		//if the path of directories is not at all what we should expect, we don't want to throw exception
+		//we wan't to return a "dummy" OperatorDetails with 'N/A' as values:
+		when(entry.getName()).thenReturn("manifests/op-name.v1.0.0.clusterserviceversion.yml");
+		details = GtarUtil.extractOperatorDetailsFromEntry(entry);
+		assertEquals(details, OperatorDetails.builder().operatorName("N/A").version("N/A").build());
+
+		//it may be that just the version is not set correctly in the file path
+		//similarly, we still want to return an OperatorDetails successfully, but with 'N/A' as the version
+		when(entry.getName()).thenReturn("manifests/manifests-123XXX/operator-name/operator-dir-xxx/clusterserviceversion.yml");
+		details = GtarUtil.extractOperatorDetailsFromEntry(entry);
+		assertEquals(details, OperatorDetails.builder().operatorName("operator-name").version("N/A").build());
+		
+		//we know that codeready workspaces, and only codeready workspaces operator, doesn't name its CSV files *.clusterserviceversion.*ml
+		//we accomodate this special case
+		when(entry.getName()).thenReturn("manifests/manifests-024123111/codeready-workspaces/codeready-workspaces-j5r6u9jw/v2.2.0/codeready-workspaces.csv.yaml");
+		details = GtarUtil.extractOperatorDetailsFromEntry(entry);
+		assertEquals(details, OperatorDetails.builder().operatorName("codeready-workspaces").version("v2.2.0").build());
+	}
+	
+	@Test
+	void testImageOperatorInfo() {
+		Map<String, List<OperatorDetails>> details = null;
+		try {
+			details = GtarUtil.imageOperatorInfo(operatorHubArchive.getInputStream());
+		} catch (IOException e) {
+			fail(e.getMessage());
+		}
+
+		//make sure at least the size of imagesInGtarArchive() is the same as our method's
+		try {
+			assertEquals(new TreeSet<String>(Arrays.asList(GtarUtil.imagesInGtarArchive(operatorHubArchive.getInputStream()))), new TreeSet<String>(details.keySet()));
+		} catch (IOException e) {
+			fail(e.getMessage());
+		}
+		// make sure that our legit operatorhub archive doesn't return any operator
+		// details where the operatorName or Version are 'N/A'
+		// the code should be able to extract the operator name and version from all of
+		// the sources
+		assertFalse(details.values().stream().flatMap(List::stream)
+				.anyMatch(dets -> dets.getOperatorName() == null || dets.getOperatorName().equals("N/A")
+						|| dets.getVersion() == null || dets.getVersion().equals("N/A")));
+		
+
+		//we know that some images belong to multiple versions of the same operator, or even to different operators alltogether
+		//lets double check that our code found them properly
+		List<String> oauth2Proxy = details.get("quay.io/pusher/oauth2_proxy:latest").stream().map(o -> o.getOperatorName()).distinct().collect(Collectors.toList());
+		assertTrue(oauth2Proxy.containsAll(Arrays.asList("amq-online", "enmasse")));
+		List<String> logging = details.get("registry.redhat.io/openshift4/ose-logging-elasticsearch5@sha256:e4cca1134b7213c8877ac6522fcad172e0f47eea799020eed25b90dc928af28e").stream().map(o -> o.getOperatorName()).distinct().collect(Collectors.toList());
+		assertTrue(logging.containsAll(Arrays.asList("cluster-logging", "elasticsearch-operator")));
+	}
+	
+	@Test
+	void testOperatorInfoForImage() {
+
+		// portworx is a rare case where the operatorname in the file is not the same as
+		// the operator id
+		String image = "registry.connect.redhat.com/portworx/openstorage-operator:1.0.4";
+		try {
+			assertEquals(
+					Arrays.asList(new OperatorDetails[] {
+							OperatorDetails.builder().operatorName("portworx-certified").version("v1.0.4").build() }),
+					GtarUtil.operatorInfoFromImage(image, operatorHubArchive.getInputStream()));
+		} catch (IOException e) {
+			fail(e.getMessage());
+		}
+
+		// example of image that appears in two different versions of the operator
+		image = "quay.io/screeley44/aws-s3-provisioner:v1.0.0";
+		try {
+			assertEquals(
+					Arrays.asList(new OperatorDetails[] {
+							OperatorDetails.builder().operatorName("awss3-operator-registry").version("1.0.0").build(),
+							OperatorDetails.builder().operatorName("awss3-operator-registry").version("1.0.1")
+									.build() }),
+					GtarUtil.operatorInfoFromImage(image, operatorHubArchive.getInputStream()));
+		} catch (IOException e) {
+			fail(e.getMessage());
+		}
+
+		//image is not in catalog, so should return null
+		image = "junk";
+		try {
+			assertNull(GtarUtil.operatorInfoFromImage(image, operatorHubArchive.getInputStream()));
+		} catch (IOException e) {
+			fail(e.getMessage());
+		}
+	}
 
 	@Test
 	void testPruneCatalog() {
