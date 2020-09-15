@@ -37,7 +37,7 @@ import java.util.Map;
         "operator-catalog.archive.url=http://localhost:8090/operatorhub-manifests-5-31-20.tar.gz"
 })
 public class OperatorCatalogCacheTests {
-    private WireMockServer wireMockServer = new WireMockServer(options().port(8090));;
+    private WireMockServer wireMockServer = new WireMockServer(options().port(8090));
     private static List<Map<String, String>> testOperatorList = new ArrayList<>();
 
     @Autowired
@@ -48,13 +48,13 @@ public class OperatorCatalogCacheTests {
     @BeforeAll
     public static void init() {
         Map<String, String> testOperatorEntry = new HashMap<>();
-        testOperatorEntry.put("name", "amqstreams");
+        testOperatorEntry.put("name", "amq-streams");
         testOperatorEntry.put("version", "v1.0.0");
         testOperatorList.add(testOperatorEntry);
     }
 
     @Test
-    void testUrlPopulateCache() throws IOException {
+    void testUrlPopulateCache() {
         wireMockServer.start();
         cache.setOperatorHubFilePath("/some/path/that/does/not/exist.tar.gz");
         cache.populateCache();
@@ -65,12 +65,12 @@ public class OperatorCatalogCacheTests {
 
     private void assertManifestMatches() {
         // 1358 is the total number of images in the mapping
-        assertEquals(cache.getAllImagesToOperatorMappings().size(), 1358);
+        assertEquals(cache.getAllImagesToOperatorMappings().size(), 1364);
         assertArrayEquals(cache.getOperatorsForImage(TEST_IMAGE).toArray(), testOperatorList.toArray());
     }
 
     @Test
-    void testFilePopulateCache() throws IOException, URISyntaxException {
+    void testFilePopulateCache() throws URISyntaxException {
         URL resource = getClass().getClassLoader().getResource("operatorhub-manifests-5-31-20.tar.gz");
         cache.setOperatorHubFilePath(Paths.get(resource.toURI()).toString());
         cache.setArchiveDownloadUrl("http://bogus.url:9090");
