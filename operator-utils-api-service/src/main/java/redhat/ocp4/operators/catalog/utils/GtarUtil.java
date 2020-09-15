@@ -2,6 +2,7 @@ package redhat.ocp4.operators.catalog.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
@@ -9,6 +10,7 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.IOUtils;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.scanner.ScannerException;
+import redhat.ocp4.operators.catalog.utils.dto.OperatorDetails;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -57,8 +59,17 @@ public class GtarUtil {
 	 * @throws IOException
 	 */
 	public static String[] imagesInGtarArchive(InputStream in) throws IOException {
-		TreeSet<String> set = new TreeSet<String>();
+		return imageOperatorInfo(in).keySet().toArray(new String[] {});
+	}
 
+	/**
+	 * For an input opertor catalog tar.gz file, returns a map of all images to their OperatorDetails, image->List of OperatorDetails
+	 * @param in
+	 * @return
+	 * @throws IOException
+	 */
+	public static Map<String,List<OperatorDetails>> imageOperatorInfo(InputStream in) throws IOException {
+		HashMap<String,List<OperatorDetails>> results = new HashMap<String,List<OperatorDetails>>();
 		try (TarArchiveInputStream fin = new TarArchiveInputStream(new GzipCompressorInputStream(in))) {
 			TarArchiveEntry entry;
 			while ((entry = fin.getNextTarEntry()) != null) {
@@ -68,14 +79,64 @@ public class GtarUtil {
 				if (entry.isFile() && (entry.getName().endsWith(".yaml") || entry.getName().endsWith(".yml"))) {
 					Yaml yaml = new Yaml();
 					Map<String, Object> data = yaml.load(fin);
-					set.addAll(imagesFromYamlMap(data));
-
+					Set<String> images = imagesFromYamlMap(data);
+					for (String image : images) {
+						if(results.get(image) != null) {
+							results.get(image).add(extractOperatorDetailsFromEntry(entry));
+						}else {
+							results.put(image, new ArrayList<OperatorDetails>(Arrays.asList(new OperatorDetails[] {extractOperatorDetailsFromEntry(entry)})));
+						}
+					}
 				}
 			}
 			fin.close();
 		}
+		return results;
+	}
 
-		return set.toArray(new String[] {});
+
+	/**
+	 * Extracts the Operator Name and Version from an Archive Entry yaml file, and populates the OperatorDetails DTO to return
+	 * If Operator Name or Version cannot be extracted, the value will be 'N/A'
+	 * @param entry
+	 * @return
+	 */
+	public static OperatorDetails extractOperatorDetailsFromEntry(ArchiveEntry entry) {
+		String filename = entry.getName();
+		String[] dirs = filename.split("/");
+		if(dirs.length < 4) {// the yaml file path must be at least manifests/operator-name/operator-name-XXX/*.yaml
+			Logger.getLogger(GtarUtil.class.getName()).warning("archive entry " + entry.getName() + " has unexpected directory structure, and operator name cannot be extracted. Setting Operator name to 'N/A'");
+			return OperatorDetails.builder().operatorName("N/A").version("N/A").build();
+		}
+		String operatorName = dirs[2];
+		String version;
+
+		if(dirs[dirs.length - 1].contains(".clusterserviceversion")) {
+			version = dirs[dirs.length - 1].substring(0, dirs[dirs.length - 1].indexOf(".clusterserviceversion"));
+			version = version.contains(".") ? version.substring(version.indexOf(".") + 1) : version;
+		}else {
+			//this special case is for codeready-workspaces operator only. It has a file named this:
+			//manifests/manifests-927044080/codeready-workspaces/codeready-workspaces-ma1de6c1/v2.1.1/codeready-workspaces.csv.yaml
+			if(filename.contains("codeready-workspaces")) {
+				version = dirs[4];
+			}else {
+				Logger.getLogger(GtarUtil.class.getName()).warning("archive entry " + entry.getName() + " has unexpected directory structure, and operator version cannot be extracted. Setting version to 'N/A'");
+				version = "N/A";
+			}
+		}
+		return OperatorDetails.builder().operatorName(operatorName).version(version).build();
+	}
+
+	/**
+	 * For a given Image URL, searches the given Operator Catalog tar.gz input stream, and returns the image's list of OperatorDetails
+	 * @param imageName
+	 * @param inputStream
+	 * @return
+	 * @throws IOException
+	 */
+	public static List<OperatorDetails> operatorInfoFromImage(String imageName, InputStream inputStream) throws IOException {
+		Map<String,List<OperatorDetails>> imageOperatorInfo = GtarUtil.imageOperatorInfo(inputStream);
+		return imageOperatorInfo.get(imageName);
 	}
 
 	/**
