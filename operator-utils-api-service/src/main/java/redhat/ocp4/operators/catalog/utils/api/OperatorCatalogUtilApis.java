@@ -108,7 +108,7 @@ public class OperatorCatalogUtilApis {
 
 	@ApiOperation(value = "returns a list of operators that an image belongs to.")
 	@GetMapping("/images/operators")
-	public Map<String, List<Map<String,String>>> listOperatorsForImage(
+	public Map<String, List<OperatorDetails>> listOperatorsForImage(
 			@RequestParam("name") List<String> imageName,
 			@RequestParam("force-refresh") boolean forceRefresh
 	) {
