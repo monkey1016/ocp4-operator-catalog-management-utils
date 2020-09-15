@@ -136,7 +136,8 @@ public class GtarUtil {
 	 */
 	public static List<OperatorDetails> operatorInfoFromImage(String imageName, InputStream inputStream) throws IOException {
 		Map<String,List<OperatorDetails>> imageOperatorInfo = GtarUtil.imageOperatorInfo(inputStream);
-		return imageOperatorInfo.get(imageName);
+		List<OperatorDetails> result = imageOperatorInfo.get(imageName);
+		return result == null ? new ArrayList<OperatorDetails>() : result ;
 	}
 
 	/**
