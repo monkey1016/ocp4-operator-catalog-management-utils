@@ -164,7 +164,7 @@ class OperatorCatalogUtilApplicationTests {
 		//image is not in catalog, so should return null
 		image = "junk";
 		try {
-			assertNull(GtarUtil.operatorInfoFromImage(image, operatorHubArchive.getInputStream()));
+			assertEquals(GtarUtil.operatorInfoFromImage(image, operatorHubArchive.getInputStream()), new ArrayList<OperatorDetails>());
 		} catch (IOException e) {
 			fail(e.getMessage());
 		}
