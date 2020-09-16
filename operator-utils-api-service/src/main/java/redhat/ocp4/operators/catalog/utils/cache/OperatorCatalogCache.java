@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -55,10 +56,8 @@ public class OperatorCatalogCache {
 			throw new RuntimeException(operatorHubFileMissingErrMsg);
 		}
 
-		if (operatorHubFile.lastModified() != OperatorCatalogCache.OPERATOR_HUB_FILE_LMT) { // file has been updated, or
-																							// we're seeing it for the
-																							// first time
-			
+		if (operatorHubFile.lastModified() != OperatorCatalogCache.OPERATOR_HUB_FILE_LMT) { 
+			// file has been updated, or we're seeing it for the first time
 			try {
 				logger.info("found new " + operatorHubFilePath + " file with LMT "
 						+ new Date(operatorHubFile.lastModified()) + ". Populating cache");
