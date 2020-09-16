@@ -56,7 +56,7 @@ public class OperatorCatalogCache {
 			throw new RuntimeException(operatorHubFileMissingErrMsg);
 		}
 
-		if (operatorHubFile.lastModified() != OperatorCatalogCache.OPERATOR_HUB_FILE_LMT) { 
+		if (operatorHubFile.lastModified() > OperatorCatalogCache.OPERATOR_HUB_FILE_LMT) { 
 			// file has been updated, or we're seeing it for the first time
 			try {
 				logger.info("found new " + operatorHubFilePath + " file with LMT "
