@@ -40,7 +40,6 @@ public class OperatorCatalogCache {
 	private String operatorHubFilePath;
 
 	public void populateCacheIfNecessary() {
-		logger.info("Populating operator caches...");
 		File operatorHubFile;
 		String operatorHubFileMissingErrMsg = "Did not find operatorHub tar.gz file at " + operatorHubFilePath
 				+ " This file must exist as a reference catalog tar.gz for fetching image/operator details";
@@ -59,6 +58,7 @@ public class OperatorCatalogCache {
 		if (operatorHubFile.lastModified() != OperatorCatalogCache.OPERATOR_HUB_FILE_LMT) { // file has been updated, or
 																							// we're seeing it for the
 																							// first time
+			
 			try {
 				logger.info("found new " + operatorHubFilePath + " file with LMT "
 						+ new Date(operatorHubFile.lastModified()) + ". Populating cache");
@@ -70,6 +70,7 @@ public class OperatorCatalogCache {
 				operatorCache.clear();
 				logger.debug("Caches cleared!");
 				operatorCache.putAll(operatorDetailsList);
+				OperatorCatalogCache.OPERATOR_HUB_FILE_LMT = operatorHubFile.lastModified();
 				logger.info("Successfully populated cache with " + operatorCache.size() + " operators!");
 			} catch (IOException e) {
 				e.printStackTrace();
