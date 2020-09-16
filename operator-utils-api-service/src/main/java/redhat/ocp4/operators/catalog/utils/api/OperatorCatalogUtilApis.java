@@ -98,14 +98,14 @@ public class OperatorCatalogUtilApis {
 
 	@ApiOperation(value = "returns a list of operators that an image belongs to, by referencing the tar.gz file sources that is passed")
 	@PostMapping("/image/operators")
-	public List<OperatorDetails> listOperatorsForImageFromCatalog(@RequestParam("imageName") String imageName, @RequestParam(value="file") MultipartFile file) throws IOException {
+	public List<OperatorDetails> listOperatorsForImageFromCatalog(@RequestParam("name") String imageName, @RequestParam(value="file") MultipartFile file) throws IOException {
 		return GtarUtil.operatorInfoFromImage(imageName, file.getInputStream());
 	}
 
 	@ApiOperation(value = "returns a list of operators that an image belongs to.")
 	@GetMapping("/image/operators")
 	public Map<String, List<OperatorDetails>> listOperatorsForImages(
-			@RequestParam("imageNames") List<String> imageName
+			@RequestParam("name") List<String> imageName
 	) {
 		return operatorCatalogCache.getOperatorsForImages(imageName);
 	}
