@@ -22,7 +22,7 @@ pipeline {
         script {
           dir('operator-utils-api-service/docker-build') {
             openshift.withCluster() {
-              openshift.startBuild('operator-utils-api-service', "--from-dir=.")
+              openshift.startBuild('operator-utils-api-service', "--from-dir=.", "--wait=true")
             }
           }
         }
