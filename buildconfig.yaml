@@ -13,10 +13,12 @@ metadata:
   name: operator-utils-api-service
 spec:
   source:
+    type: git
     git:
       uri: https://github.com/monkey1016/ocp4-operator-catalog-management-utils.git
       ref: khaled-build
   strategy:
+    type: Docker
     dockerStrategy:
       dockerfilePath: Dockerfile
   output:
@@ -32,9 +34,67 @@ metadata:
   name: operator-utils-api-service-pipeline
 spec:
   source:
+    type: git
     git:
       uri: https://github.com/monkey1016/ocp4-operator-catalog-management-utils.git
       ref: khaled-build
   strategy:
+    type: JenkinsPipeline
     jenkinsPipelineStrategy: {}
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  annotations:
+    alpha.image.policy.openshift.io/resolve-names: '*'
+    image.openshift.io/triggers: >-
+      [{"from":{"kind":"ImageStreamTag","name":"operator-utils-api-service:latest","namespace":"scanning"},"fieldPath":"spec.template.spec.containers[?(@.name==\"operator-utils-api-service\")].image","pause":"false"}]
+  name: operator-utils-api-service
+  labels:
+    app: operator-utils-api-service
+    app.kubernetes.io/component: operator-utils-api-service
+    app.kubernetes.io/instance: operator-utils-api-service
+    app.kubernetes.io/part-of: operator-utils-api-service-app
+    app.openshift.io/runtime-namespace: scanning
+    app.openshift.io/runtime-version: latest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: operator-utils-api-service
+  template:
+    metadata:
+      labels:
+        app: operator-utils-api-service
+    spec:
+      containers:
+        - name: operator-utils-api-service
+          image: operator-utils-api-service:latest
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: operator-hub-volume
+              mountPath: /opt/operatorhub
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
+      volumes:
+        - name: operator-hub-volume
+          persistentVolumeClaim:
+              claimName: operator-hub
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
 
