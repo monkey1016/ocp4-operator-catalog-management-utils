@@ -81,7 +81,8 @@ public class OperatorCatalogCache {
 
 	public List<OperatorDetails> getOperatorsForImage(String imageName) {
 		IMap<String, List<OperatorDetails>> imagesToOperatorsCache = hazelcastInstance.getMap(IMAGE_OPERATORS_CACHE);
-		return imagesToOperatorsCache.get(imageName);
+		List<OperatorDetails> result = imagesToOperatorsCache.get(imageName);
+		return result == null ? new ArrayList<OperatorDetails>() : result;
 	}
 
 	public Map<String, List<OperatorDetails>> getOperatorsForImages(List<String> imageNames) {
