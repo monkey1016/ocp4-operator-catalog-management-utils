@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
 @TestPropertySource(properties = {
-        "operator-catalog.archive.url=http://localhost:8090/operatorhub-manifests-5-31-20.tar.gz"
+        "operatorhub.tar.gz.file=classpath:operatorhub-manifests-5-31-20.tar.gz"
 })
 public class OperatorCatalogCacheTests {
     private WireMockServer wireMockServer = new WireMockServer(options().port(8090));
@@ -36,16 +36,6 @@ public class OperatorCatalogCacheTests {
         testOperatorList.add(OperatorDetails.builder().operatorName("amq-streams").version("v1.0.0").build());
     }
 
-    @Test
-    void testUrlPopulateCache() {
-        wireMockServer.start();
-        cache.setOperatorHubFilePath("/some/path/that/does/not/exist.tar.gz");
-        cache.populateCache();
-        wireMockServer.stop();
-
-        assertManifestMatches();
-    }
-
     private void assertManifestMatches() {
         // 1358 is the total number of images in the mapping
         assertEquals(cache.getAllImagesToOperatorMappings().size(), 1364);
@@ -54,10 +44,7 @@ public class OperatorCatalogCacheTests {
 
     @Test
     void testFilePopulateCache() throws URISyntaxException {
-        URL resource = getClass().getClassLoader().getResource("operatorhub-manifests-5-31-20.tar.gz");
-        cache.setOperatorHubFilePath(Paths.get(resource.toURI()).toString());
-        cache.setArchiveDownloadUrl("http://bogus.url:9090");
-        cache.populateCache();
+        cache.populateCacheIfNecessary();
         assertManifestMatches();
     }
 }
